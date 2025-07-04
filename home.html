@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Dashboard</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #add8e6;
+      font-family: Arial, sans-serif;
+    }
+
+    .datetime {
+      font-size: 16px;
+      color: #003366;
+      font-weight: bold;
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 60px;
+      background-color: #003366;
+      overflow-x: hidden;
+      transition: width 0.3s ease;
+      z-index: 10;
+    }
+
+    .sidebar:hover {
+      width: 200px;
+    }
+
+    .hamburger {
+      font-size: 30px;
+      color: white;
+      text-align: center;
+      padding: 20px 0;
+      cursor: pointer;
+    }
+
+    .sidebar button {
+      display: flex;
+      align-items: center;
+      width: 100%;
+      padding: 15px 20px;
+      color: white;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 16px;
+      opacity: 0.9;
+      transition: opacity 0.3s ease;
+    }
+
+    .sidebar button .icon {
+      font-size: 20px;
+      margin-right: 12px;
+      min-width: 24px;
+      text-align: center;
+    }
+
+    /* Initially hide text on collapsed sidebar */
+    .sidebar:not(:hover) button .text {
+      display: none;
+    }
+
+    /* On hover show text */
+    .sidebar:hover button .text {
+      display: inline;
+    }
+
+    /* Button hover background */
+    .sidebar button:hover {
+      background-color: #005599;
+    }
+
+    .container {
+      margin-left: 60px;
+      padding: 40px;
+      transition: margin-left 0.3s ease;
+    }
+
+    .sidebar:hover ~ .container {
+      margin-left: 200px;
+    }
+
+    .section {
+      display: none;
+      max-width: 1000px;
+      margin: auto;
+    }
+
+    .section.active {
+      display: block;
+    }
+
+    h1 {
+      color: #003366;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      font-size: 16px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+    }
+
+    button.save-btn {
+      padding: 10px 20px;
+      background-color: #003366;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    button.save-btn:hover {
+      background-color: #005599;
+    }
+
+    .note, .todo, .wallet-entry {
+      background-color: white;
+      padding: 15px;
+      margin-top: 15px;
+      border-radius: 5px;
+      box-shadow: 0 0 5px rgba(0,0,0,0.2);
+    }
+
+    .wallet-balance {
+      font-size: 20px;
+      color: green;
+      margin: 10px 0;
+    }
+
+    .note-title, .todo-title {
+      font-weight: bold;
+      margin-bottom: 5px;
+      color: #003366;
+    }
+
+    .note-time, .todo-time {
+      font-size: 12px;
+      color: gray;
+      margin-bottom: 8px;
+    }
+
+    .priority-High { border-left: 6px solid red; }
+    .priority-Medium { border-left: 6px solid orange; }
+    .priority-Low { border-left: 6px solid green; }
+
+    .countdown {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+    }
+
+    .calendar-cell {
+      min-height: 100px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 5px;
+      background: #f0f8ff;
+      cursor: pointer;
+      position: relative;
+    }
+
+    .calendar-cell.today {
+      border: 2px solid #003366;
+      background: #e6f2ff;
+    }
+
+    .calendar-task {
+      font-size: 12px;
+      margin-top: 4px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      background: #d1e7ff;
+      color: #003366;
+    }
+
+    .calendar-nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+    }
+
+    .calendar-nav button {
+      background: #003366;
+      color: #fff;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .calendar-nav span {
+      font-size: 18px;
+      font-weight: bold;
+      color: #003366;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5);
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+
+    .modal-content {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .modal-content h3 { margin-top: 0; color: #003366; }
+    .modal-content ul { padding-left: 20px; }
+    .modal-content button {
+      background: #003366;
+      color: #fff;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Right: University Button and Time -->
+  <div style="position: absolute; top: 10px; right: 20px; display: flex; align-items: center; gap: 10px;">
+    <a href="https://vulms.vu.edu.pk/" target="_blank" title="Go to VULMS">
+      <button style="padding: 6px 12px; background-color: #003366; color: white; border: none; border-radius: 5px; cursor: pointer;">
+        University
+      </button>
+    </a>
+    <div id="datetime" class="datetime"></div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="hamburger">&#9776;</div>
+    <button onclick="showSection('home')"><span class="icon">🏠</span><span class="text">Home</span></button>
+    <button onclick="showSection('notes')"><span class="icon">📝</span><span class="text">Notes</span></button>
+    <button onclick="showSection('todo')"><span class="icon">✔️</span><span class="text">To-Do</span></button>
+    <button onclick="showSection('calendar')"><span class="icon">📅</span><span class="text">Calendar</span></button>
+    <button onclick="showSection('wallet')"><span class="icon">👛</span><span class="text">Wallet</span></button>
+    <button onclick="logout()"><span class="icon">🚪</span><span class="text">Logout</span></button>
+  </div>
+
+  <!-- Main Container -->
+  <div class="container">
+    <!-- Sections -->
+    <div class="section active" id="home">
+      <h1>Welcome, Blank714!</h1>
+      <h2>Top Priority Tasks</h2>
+      <div id="topTasks"></div>
+    </div>
+
+    <div class="section" id="notes">
+      <h1>Notes</h1>
+      <input type="text" id="noteTitle" placeholder="Note Title" />
+      <textarea id="noteContent" rows="5" placeholder="Write your note here..."></textarea>
+      <button class="save-btn" onclick="saveNote()">Save Note</button>
+      <div id="notesList"></div>
+    </div>
+
+    <div class="section" id="todo">
+      <h1>To‑Do List</h1>
+      <input type="text" id="todoName" placeholder="Event Name" />
+      <input type="datetime-local" id="todoDateTime" />
+      <select id="todoPriority">
+        <option value="High">High Priority</option>
+        <option value="Medium">Medium Priority</option>
+        <option value="Low">Low Priority</option>
+      </select>
+      <button class="save-btn" onclick="saveTodo()">Add To‑Do</button>
+      <div id="todoList"></div>
+    </div>
+
+    <div class="section" id="calendar">
+      <h1>Monthly Calendar</h1>
+      <div class="calendar-nav">
+        <button onclick="changeMonth(-1)">⏮ Prev</button>
+        <span id="calendarMonthYear"></span>
+        <button onclick="changeMonth(1)">Next ⏭</button>
+      </div>
+      <div id="calendarGrid" class="calendar-grid"></div>
+    </div>
+
+    <div class="section" id="wallet">
+      <h1>Wallet Management</h1>
+      <input type="number" id="walletAmount" placeholder="Amount (positive or negative)" />
+      <input type="text" id="walletDesc" placeholder="Description" />
+      <button class="save-btn" onclick="addWalletEntry()">Add Entry</button>
+      <div class="wallet-balance" id="walletBalance">Total Balance: Rs 0</div>
+      <div id="walletList"></div>
+    </div>
+  </div>
+
+  <!-- Task Modal -->
+  <div class="modal" id="taskModal">
+    <div class="modal-content">
+      <h3>Tasks on <span id="modalDate"></span></h3>
+      <ul id="modalTaskList"></ul>
+      <button onclick="closeModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- Script -->
+  <script>
+    function updateDateTime() {
+      const now = new Date();
+      document.getElementById("datetime").textContent = now.toLocaleString();
+    }
+    setInterval(updateDateTime, 1000);
+    updateDateTime();
+
+    function showSection(id) {
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      if (id === 'home') displayTopTasks();
+      if (id === 'notes') displayNotes();
+      if (id === 'todo') displayTodos();
+      if (id === 'calendar') renderCalendar();
+      if (id === 'wallet') displayWallet();
+    }
+
+    function logout() {
+      window.location.href = "login.html";
+    }
+
+    function saveNote() {
+      const title = document.getElementById("noteTitle").value.trim();
+      const content = document.getElementById("noteContent").value.trim();
+      if (!title || !content) return;
+      let notes = JSON.parse(localStorage.getItem("notes") || "[]");
+      notes.unshift({ title, content, timestamp: new Date().toLocaleString() });
+      localStorage.setItem("notes", JSON.stringify(notes));
+      document.getElementById("noteTitle").value = "";
+      document.getElementById("noteContent").value = "";
+      displayNotes();
+    }
+
+    function displayNotes() {
+      const notes = JSON.parse(localStorage.getItem("notes") || "[]");
+      const notesList = document.getElementById("notesList");
+      notesList.innerHTML = "";
+      notes.forEach((note, index) => {
+        const div = document.createElement("div");
+        div.className = "note";
+        div.innerHTML = `
+          <div class="note-title">${note.title}</div>
+          <div class="note-time">${note.timestamp}</div>
+          <div class="note-content">${note.content}</div>
+          <button onclick="deleteNote(${index})" style="margin-top:10px;color:red;cursor:pointer;">🗑️ Delete</button>
+        `;
+        notesList.appendChild(div);
+      });
+    }
+
+    function deleteNote(index) {
+      let notes = JSON.parse(localStorage.getItem("notes") || "[]");
+      notes.splice(index, 1);
+      localStorage.setItem("notes", JSON.stringify(notes));
+      displayNotes();
+    }
+
+    function saveTodo() {
+      const name = document.getElementById("todoName").value.trim();
+      const datetime = document.getElementById("todoDateTime").value;
+      const priority = document.getElementById("todoPriority").value;
+      if (!name || !datetime) return;
+      let todos = JSON.parse(localStorage.getItem("todos") || "[]");
+      todos.unshift({ name, datetime, priority });
+      localStorage.setItem("todos", JSON.stringify(todos));
+      document.getElementById("todoName").value = "";
+      document.getElementById("todoDateTime").value = "";
+      displayTodos();
+      displayTopTasks();
+    }
+
+    function displayTodos() {
+      const todos = JSON.parse(localStorage.getItem("todos") || "[]");
+      const todoList = document.getElementById("todoList");
+      todoList.innerHTML = "";
+      todos.forEach((todo, index) => {
+        const div = document.createElement("div");
+        div.className = `todo priority-${todo.priority}`;
+        div.innerHTML = `
+          <div class="todo-title">${todo.name} (${todo.priority})</div>
+          <div class="todo-time">Due: ${new Date(todo.datetime).toLocaleString()}</div>
+          <button onclick="deleteTodo(${index})" style="margin-top:10px;color:red;cursor:pointer;">🗑️ Delete</button>
+        `;
+        todoList.appendChild(div);
+      });
+    }
+
+    function deleteTodo(index) {
+      let todos = JSON.parse(localStorage.getItem("todos") || "[]");
+      todos.splice(index, 1);
+      localStorage.setItem("todos", JSON.stringify(todos));
+      displayTodos();
+      displayTopTasks();
+    }
+
+    function displayTopTasks() {
+      const todos = JSON.parse(localStorage.getItem("todos") || "[]");
+      const topTasksDiv = document.getElementById("topTasks");
+      topTasksDiv.innerHTML = "";
+      const priorityMap = { High: 3, Medium: 2, Low: 1 };
+      const sorted = todos.slice().sort((a, b) => priorityMap[b.priority] - priorityMap[a.priority]);
+      const top = sorted.slice(0, 3);
+      top.forEach((todo, index) => {
+        const div = document.createElement("div");
+        div.className = `todo priority-${todo.priority}`;
+        div.innerHTML = `
+          <div class="todo-title">${todo.name} (${todo.priority})</div>
+          <div class="countdown" id="countdown-${index}"></div>
+        `;
+        topTasksDiv.appendChild(div);
+      });
+    }
+
+    // Single interval to update all countdowns every second
+    setInterval(() => {
+      const todos = JSON.parse(localStorage.getItem("todos") || "[]");
+      const priorityMap = { High: 3, Medium: 2, Low: 1 };
+      const sorted = todos.slice().sort((a, b) => priorityMap[b.priority] - priorityMap[a.priority]);
+      const top = sorted.slice(0, 3);
+      top.forEach((todo, index) => {
+        updateCountdown(todo.datetime, `countdown-${index}`);
+      });
+    }, 1000);
+
+    function updateCountdown(targetDateTime, elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const now = new Date();
+      const target = new Date(targetDateTime);
+      const diff = target - now;
+      if (diff <= 0) {
+        el.textContent = "Time's up!";
+        return;
+      }
+      const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+      const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      el.textContent = `Time Left: ${days}d ${hours}h`;
+    }
+
+    let cm = new Date().getMonth(), cy = new Date().getFullYear();
+    function changeMonth(offset) {
+      cm += offset;
+      if (cm < 0) { cm = 11; cy--; }
+      if (cm > 11) { cm = 0; cy++; }
+      renderCalendar();
+    }
+
+    function renderCalendar() {
+      const grid = document.getElementById("calendarGrid");
+      const label = document.getElementById("calendarMonthYear");
+      const monthName = new Date(cy, cm).toLocaleString('default', { month: 'long' });
+      label.textContent = `${monthName} ${cy}`;
+      grid.innerHTML = "";
+      const first = new Date(cy, cm, 1).getDay();
+      const days = new Date(cy, cm + 1, 0).getDate();
+      const todos = JSON.parse(localStorage.getItem("todos") || "[]");
+
+      for (let i = 0; i < first; i++) grid.innerHTML += '<div></div>';
+
+      for (let d = 1; d <= days; d++) {
+        const cell = document.createElement("div");
+        const cdate = new Date(cy, cm, d);
+        const today = cdate.toDateString() === new Date().toDateString();
+        cell.className = `calendar-cell${today ? ' today' : ''}`;
+        cell.innerHTML = `<strong>${d}</strong>`;
+        const ymd = `${cy}-${String(cm + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const dayTasks = todos.filter(t => t.datetime.startsWith(ymd));
+        dayTasks.forEach(t => cell.innerHTML += `<div class="calendar-task">${t.name}</div>`);
+        grid.appendChild(cell);
+      }
+    }
+
+    function displayWallet() {
+      let wallet = JSON.parse(localStorage.getItem("wallet") || "[]");
+      let balance = wallet.reduce((acc, entry) => acc + parseFloat(entry.amount), 0);
+      document.getElementById("walletBalance").textContent = `Total Balance: Rs ${balance.toFixed(2)}`;
+
+      const walletList = document.getElementById("walletList");
+      walletList.innerHTML = "";
+      wallet.forEach((entry, index) => {
+        const div = document.createElement("div");
+        div.className = "wallet-entry";
+        div.innerHTML = `
+          <div><strong>Rs ${entry.amount}</strong> - ${entry.description}</div>
+          <button onclick="deleteWalletEntry(${index})" style="margin-top:10px;color:red;cursor:pointer;">🗑️ Delete</button>
+        `;
+        walletList.appendChild(div);
+      });
+    }
+
+    function addWalletEntry() {
+      const amount = parseFloat(document.getElementById("walletAmount").value);
+      const description = document.getElementById("walletDesc").value.trim();
+      if (isNaN(amount) || !description) return;
+      let wallet = JSON.parse(localStorage.getItem("wallet") || "[]");
+      wallet.unshift({ amount, description });
+      localStorage.setItem("wallet", JSON.stringify(wallet));
+      document.getElementById("walletAmount").value = "";
+      document.getElementById("walletDesc").value = "";
+      displayWallet();
+    }
+
+    function deleteWalletEntry(index) {
+      let wallet = JSON.parse(localStorage.getItem("wallet") || "[]");
+      wallet.splice(index, 1);
+      localStorage.setItem("wallet", JSON.stringify(wallet));
+      displayWallet();
+    }
+
+    // Modal functions (if needed)
+    function closeModal() {
+      document.getElementById("taskModal").style.display = "none";
+    }
+
+    // Initialize with calendar rendered
+    renderCalendar();
+    displayTopTasks();
+  </script>
+
+</body>
+</html>
